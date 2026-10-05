@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Survivor 51 — Fantasy Pool</title>
+<style>
+  :root {
+    --bg: #14110d;
+    --panel: #221c15;
+    --panel-2: #2d251b;
+    --line: #3d3226;
+    --text: #f3ead9;
+    --muted: #a8977c;
+    --torch: #f28c28;
+    --torch-2: #ffb347;
+    --gold: #f5c542;
+    --out: #c0392b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(ellipse at top, #2b2116 0%, var(--bg) 60%) fixed;
+    color: var(--text);
+  }
+  header {
+    text-align: center;
+    padding: 28px 16px 8px;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 40px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--torch-2);
+    text-shadow: 0 0 18px rgba(242, 140, 40, .45);
+  }
+  header p { margin: 6px 0 0; color: var(--muted); }
+  main { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  h2 {
+    font-size: 15px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+    margin: 32px 0 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* Leader banner */
+  #leader {
+    margin: 12px auto 0;
+    max-width: 720px;
+    background: linear-gradient(90deg, rgba(245,197,66,.08), rgba(245,197,66,.18), rgba(245,197,66,.08));
+    border: 1px solid rgba(245,197,66,.45);
+    border-radius: 14px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    font-size: 18px;
+  }
+  #leader .crown { font-size: 28px; }
+  #leader img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; }
+  #leader strong { color: var(--gold); }
+
+  /* Players */
+  #players {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .player {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  .player.leading {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 1px var(--gold), 0 0 24px rgba(245,197,66,.25);
+  }
+  .player .badge {
+    position: absolute;
+    top: -10px; right: 14px;
+    background: var(--gold);
+    color: #2a1f00;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .player-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .player-head img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--torch); }
+  .player-head .name { font-size: 20px; font-weight: 700; }
+  .player-head .rank { font-size: 12px; color: var(--muted); }
+  .player-head .pts { margin-left: auto; text-align: right; }
+  .player-head .pts b { display: block; font-size: 32px; line-height: 1; color: var(--torch-2); font-variant-numeric: tabular-nums; }
+  .player-head .pts span { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .pick { text-align: center; }
+  .pick .ph { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 315 / 385; background: #000; }
+  .pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .pick .label { font-size: 13px; font-weight: 600; margin-top: 5px; }
+  .pick .sub { font-size: 11px; color: var(--muted); min-height: 14px; }
+  .pick.out img { filter: grayscale(1) brightness(.55); }
+  .pick.out .sub { color: var(--torch-2); font-weight: 700; }
+  .pick.winner .ph { outline: 2px solid var(--gold); }
+  .pick.winner .sub { color: var(--gold); font-weight: 700; }
+
+  /* Contestant grid */
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card .ph { position: relative; aspect-ratio: 315 / 385; background: #000; }
+  .card .ph img.face { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter .25s; }
+  .card .owners {
+    position: absolute; left: 6px; bottom: 6px;
+    display: flex; gap: 3px;
+  }
+  .card .owners img { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--panel); object-fit: cover; }
+  .card .stamp {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+  }
+  .card .stamp .torch { font-size: 30px; }
+  .card .stamp .ord {
+    font-size: 13px; font-weight: 800; letter-spacing: 1px;
+    background: rgba(0,0,0,.7); border: 1px solid var(--torch);
+    color: var(--torch-2);
+    padding: 4px 10px; border-radius: 999px; margin-top: 4px;
+  }
+  .card.out .ph img.face { filter: grayscale(1) brightness(.4); }
+  .card.out .stamp { display: flex; }
+  .card.winner { border-color: var(--gold); box-shadow: 0 0 20px rgba(245,197,66,.35); }
+  .card.winner .stamp { display: flex; }
+  .card.winner .stamp .ord { border-color: var(--gold); color: var(--gold); }
+  .card .body { padding: 10px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .card .cname { font-weight: 700; font-size: 15px; text-align: center; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--text);
+    padding: 7px 10px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  button:hover:not(:disabled) { border-color: var(--torch); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .card button.elim { background: linear-gradient(180deg, #8a2a1c, #6b1f14); border-color: #a83a28; }
+  .card button.elim:hover { border-color: var(--torch-2); }
+  .card .status { text-align: center; font-size: 12px; color: var(--muted); padding: 7px 0; }
+  .toolbar { display: flex; gap: 8px; }
+  .toolbar button { text-transform: none; letter-spacing: 0; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 30px 16px; }
+  footer a { color: var(--muted); }
+  #syncstatus { color: var(--torch-2); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔥 Survivor 51 Pool 🔥</h1>
+  <p>Outwit · Outplay · Outlast</p>
+  <div id="leader"></div>
+</header>
+
+<main>
+  <h2>Players</h2>
+  <section id="players"></section>
+
+  <h2>
+    <span>The Castaways · <span id="remaining"></span></span>
+    <span class="toolbar">
+      <button id="undo">↶ Undo last</button>
+      <button id="reset">Reset all</button>
+    </span>
+  </h2>
+  <section id="grid"></section>
+</main>
+
+<footer>
+  Scoring: a picked contestant who is voted out <b>Nth</b> earns their owners <b>N</b> points.
+  The Sole Survivor earns <b>21</b>. Scores refresh automatically.
+  <br><br><span id="syncstatus"></span>
+  <br><a href="#" id="keeper"></a>
+</footer>
+
+<script>
+  const CONTESTANTS = [
+    "Aaliyah", "Alexis", "Ana", "Brady", "Carter", "Cristian", "Devin",
+    "Eric", "Jelly", "Jenna", "Kilby", "Kristin", "Lewis", "Linnea",
+    "Maggie", "Mike", "Ori", "Patt", "Rob", "Sharonda", "Thien An"
+  ];
+  const img = name => {
+    const i = CONTESTANTS.indexOf(name) + 1;
+    return `img/${String(i).padStart(2, "0")}_${name.replace(/ /g, "_")}.png`;
+  };
+
+  const PLAYERS = [
+    { name: "Odiya",  avatar: "img/players/odiya.jpg",  picks: ["Linnea", "Patt", "Lewis"] },
+    { name: "Yohai",  avatar: "img/players/yohai.jpg",  picks: ["Patt", "Cristian", "Sharonda"] },
+    { name: "Adam",   avatar: "img/players/adam.jpg",   picks: ["Alexis", "Cristian", "Jelly"] },
+    { name: "Lonnie", avatar: "img/players/lonnie.jpg", picks: ["Linnea", "Patt", "Mike"] },
+  ];
+
+  // Shared state lives in docs/state.json in the repo. Everyone reads it from
+  // the Pages site; the scorekeeper writes it through the GitHub contents API.
+  const API = "https://api.github.com/repos/Fonzlon/survivor51-pool/contents/docs/state.json";
+  const TOKEN_KEY = "survivor51-pool-token";
+  const POLL_MS = 30000;
+
+  // Ordered list of eliminated contestant names; index 0 = first voted out.
+  let eliminated = [];
+  let sha = null;      // blob sha of state.json, required by the API for updates
+  let saving = false;
+  const token = () => localStorage.getItem(TOKEN_KEY);
+  const isKeeper = () => !!token();
+
+  const ghHeaders = () => ({ Authorization: `token ${token()}`, Accept: "application/vnd.github+json" });
+  const b64encode = s => btoa(unescape(encodeURIComponent(s)));
+  const b64decode = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
+
+  async function load() {
+    if (isKeeper()) {
+      // Scorekeeper reads straight from the repo so it never lags a Pages rebuild.
+      const r = await fetch(`${API}?ref=main&t=${Date.now()}`, { headers: ghHeaders(), cache: "no-store" });
+      if (r.status === 401) {
+        localStorage.removeItem(TOKEN_KEY);
+        alert("Scorekeeper token was rejected — switching back to view-only.");
+        return load();
+      }
+      if (!r.ok) throw new Error(`GitHub API ${r.status}`);
+      const j = await r.json();
+      sha = j.sha;
+      eliminated = JSON.parse(b64decode(j.content)).eliminated;
+    } else {
+      const r = await fetch(`state.json?t=${Date.now()}`, { cache: "no-store" });
+      if (!r.ok) throw new Error(`state.json ${r.status}`);
+      eliminated = (await r.json()).eliminated;
+    }
+  }
+
+  async function save(message) {
+    saving = true;
+    setStatus("Saving…");
+    try {
+      const r = await fetch(API, {
+        method: "PUT",
+        headers: { ...ghHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          branch: "main",
+          sha,
+          content: b64encode(JSON.stringify({ eliminated }, null, 2) + "\n"),
+        }),
+      });
+      if (!r.ok) throw new Error(`GitHub API ${r.status}: ${(await r.json()).message}`);
+      sha = (await r.json()).content.sha;
+      setStatus("Saved ✓ · viewers see it within ~1 min");
+    } catch (e) {
+      alert(`Couldn't save — reloading the latest scores.\n\n${e.message}`);
+      await load();
+      render();
+      setStatus("");
+    } finally {
+      saving = false;
+    }
+  }
+
+  function setStatus(text) {
+    document.getElementById("syncstatus").textContent = text;
+  }
+  const ordinal = n => {
+    const s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+
+  // Once only one castaway remains, they're the Sole Survivor.
+  function winner() {
+    if (eliminated.length !== CONTESTANTS.length - 1) return null;
+    return CONTESTANTS.find(c => !eliminated.includes(c));
+  }
+
+  function pointsFor(contestant) {
+    const pos = eliminated.indexOf(contestant);
+    if (pos >= 0) return pos + 1;
+    if (contestant === winner()) return CONTESTANTS.length;
+    return 0;
+  }
+
+  function scores() {
+    return PLAYERS.map(p => ({ ...p, points: p.picks.reduce((s, c) => s + pointsFor(c), 0) }));
+  }
+
+  function statusLine(c) {
+    const pos = eliminated.indexOf(c);
+    if (pos >= 0) return { cls: "out", text: `Out ${ordinal(pos + 1)} · +${pos + 1}` };
+    if (c === winner()) return { cls: "winner", text: `👑 Sole Survivor · +${CONTESTANTS.length}` };
+    return { cls: "", text: "Still in the game" };
+  }
+
+  function renderLeader(scored) {
+    const el = document.getElementById("leader");
+    const top = Math.max(...scored.map(p => p.points));
+    if (top === 0) {
+      el.innerHTML = `<span class="crown">🏝️</span><span>No points yet — the game is just getting started.</span>`;
+      return [];
+    }
+    const leaders = scored.filter(p => p.points === top);
+    const names = leaders.map(p => `<strong>${p.name}</strong>`).join(" & ");
+    el.innerHTML = `<span class="crown">👑</span>
+      ${leaders.map(p => `<img src="${p.avatar}" alt="${p.name}">`).join("")}
+      <span>${leaders.length > 1 ? "Tied for the lead" : "Current leader"}: ${names} with <strong>${top}</strong> pts</span>`;
+    return leaders.map(p => p.name);
+  }
+
+  function renderPlayers(scored, leaderNames) {
+    const ranked = [...scored].sort((a, b) => b.points - a.points);
+    const rankOf = p => ranked.findIndex(r => r.points === p.points) + 1;
+    document.getElementById("players").innerHTML = scored.map(p => `
+      <div class="player ${leaderNames.includes(p.name) ? "leading" : ""}">
+        ${leaderNames.includes(p.name) ? `<div class="badge">LEADER</div>` : ""}
+        <div class="player-head">
+          <img src="${p.avatar}" alt="${p.name}">
+          <div>
+            <div class="name">${p.name}</div>
+            <div class="rank">${p.points ? `${ordinal(rankOf(p))} place` : "&nbsp;"}</div>
+          </div>
+          <div class="pts"><b>${p.points}</b><span>points</span></div>
+        </div>
+        <div class="picks">
+          ${p.picks.map(c => {
+            const s = statusLine(c);
+            return `<div class="pick ${s.cls}">
+              <div class="ph"><img src="${img(c)}" alt="${c}"></div>
+              <div class="label">${c}</div>
+              <div class="sub">${s.cls ? s.text : ""}</div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`).join("");
+  }
+
+  function renderGrid() {
+    const win = winner();
+    document.getElementById("remaining").textContent =
+      win ? "Game over" : `${CONTESTANTS.length - eliminated.length} remaining`;
+    document.getElementById("grid").innerHTML = CONTESTANTS.map(c => {
+      const pos = eliminated.indexOf(c);
+      const isOut = pos >= 0;
+      const isWin = c === win;
+      const owners = PLAYERS.filter(p => p.picks.includes(c));
+      return `<div class="card ${isOut ? "out" : ""} ${isWin ? "winner" : ""}">
+        <div class="ph">
+          <img class="face" src="${img(c)}" alt="${c}">
+          <div class="stamp">
+            <div class="torch">${isWin ? "👑" : "🔥"}</div>
+            <div class="ord">${isWin ? "SOLE SURVIVOR" : isOut ? `OUT ${ordinal(pos + 1).toUpperCase()}` : ""}</div>
+          </div>
+          <div class="owners">${owners.map(p => `<img src="${p.avatar}" title="Picked by ${p.name}" alt="${p.name}">`).join("")}</div>
+        </div>
+        <div class="body">
+          <div class="cname">${c}</div>
+          ${isOut || isWin
+            ? `<div class="status">${isWin ? `Wins · +${CONTESTANTS.length} pts` : `Snuffed ${ordinal(pos + 1)} · +${pos + 1} pts`}</div>`
+            : isKeeper()
+              ? `<button class="elim" data-name="${c}">🔥 Eliminate</button>`
+              : `<div class="status">Still in the game</div>`}
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  function render() {
+    const scored = scores();
+    const leaderNames = renderLeader(scored);
+    renderPlayers(scored, leaderNames);
+    renderGrid();
+    document.querySelector(".toolbar").style.display = isKeeper() ? "" : "none";
+    document.getElementById("undo").disabled = eliminated.length === 0;
+    document.getElementById("reset").disabled = eliminated.length === 0;
+    document.getElementById("keeper").textContent = isKeeper() ? "Leave scorekeeper mode" : "🔑 Scorekeeper login";
+  }
+
+  async function act(mutate, message) {
+    if (saving) return;
+    mutate();
+    render();
+    await save(message);
+  }
+
+  document.getElementById("grid").addEventListener("click", e => {
+    const btn = e.target.closest("button.elim");
+    if (!btn) return;
+    const name = btn.dataset.name;
+    act(() => eliminated.push(name), `Eliminate ${name} (${ordinal(eliminated.length + 1)} out)`);
+  });
+  document.getElementById("undo").addEventListener("click", () => {
+    const name = eliminated[eliminated.length - 1];
+    act(() => eliminated.pop(), `Undo elimination of ${name}`);
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    if (!confirm("Bring everyone back and clear all eliminations?")) return;
+    act(() => { eliminated = []; }, "Reset all eliminations");
+  });
+  document.getElementById("keeper").addEventListener("click", async e => {
+    e.preventDefault();
+    if (isKeeper()) {
+      localStorage.removeItem(TOKEN_KEY);
+    } else {
+      const t = prompt("Paste your GitHub fine-grained token (Contents: read & write on survivor51-pool).\nIt's stored only in this browser.");
+      if (!t) return;
+      localStorage.setItem(TOKEN_KEY, t.trim());
+    }
+    await refresh();
+  });
+
+  async function refresh() {
+    if (saving) return;
+    try {
+      await load();
+      render();
+    } catch (e) {
+      setStatus(`Couldn't load scores: ${e.message}`);
+    }
+  }
+
+  refresh();
+  setInterval(() => { if (!isKeeper()) refresh(); }, POLL_MS);
+</script>
+</body>
+</html>
