@@ -70,6 +70,64 @@
   #leader img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; }
   #leader strong { color: var(--gold); }
 
+  /* Leader spotlight — replaces the small banner once someone has points */
+  #leader.spotlight {
+    max-width: 860px;
+    margin-top: 22px;
+    padding: 26px 24px 30px;
+    flex-direction: column;
+    gap: 18px;
+    border: 2px solid var(--gold);
+    border-radius: 22px;
+    background:
+      radial-gradient(ellipse at center top, rgba(245,197,66,.28), transparent 70%),
+      linear-gradient(180deg, rgba(245,197,66,.12), rgba(245,197,66,.03));
+    box-shadow: 0 0 40px rgba(245,197,66,.25), inset 0 0 30px rgba(245,197,66,.08);
+  }
+  #leader .title {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  #leader .champs { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
+  #leader .champ { display: flex; flex-direction: column; align-items: center; }
+  #leader .champ .crown-big {
+    font-size: 54px;
+    line-height: 1;
+    margin-bottom: -14px;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,.6));
+    animation: bob 2.4s ease-in-out infinite;
+  }
+  #leader .champ img {
+    width: 170px;
+    height: 170px;
+    border: 5px solid var(--gold);
+    box-shadow: 0 0 0 6px rgba(245,197,66,.25), 0 0 40px rgba(245,197,66,.55);
+    animation: glow 2.4s ease-in-out infinite;
+  }
+  #leader .champ .cname {
+    margin-top: 14px;
+    font-size: 40px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--text);
+    text-shadow: 0 0 18px rgba(245,197,66,.5);
+  }
+  #leader .champ .cpts {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  #leader .margin { font-size: 15px; color: var(--muted); }
+  #leader .margin b { color: var(--text); }
+  @keyframes bob { 50% { transform: translateY(-6px) rotate(-4deg); } }
+  @keyframes glow { 50% { box-shadow: 0 0 0 8px rgba(245,197,66,.3), 0 0 60px rgba(245,197,66,.8); } }
+
   /* Players */
   #players {
     display: grid;
@@ -327,14 +385,27 @@
     const el = document.getElementById("leader");
     const top = Math.max(...scored.map(p => p.points));
     if (top === 0) {
+      el.className = "";
       el.innerHTML = `<span class="crown">🏝️</span><span>No points yet — the game is just getting started.</span>`;
       return [];
     }
     const leaders = scored.filter(p => p.points === top);
-    const names = leaders.map(p => `<strong>${p.name}</strong>`).join(" & ");
-    el.innerHTML = `<span class="crown">👑</span>
-      ${leaders.map(p => `<img src="${p.avatar}" alt="${p.name}">`).join("")}
-      <span>${leaders.length > 1 ? "Tied for the lead" : "Current leader"}: ${names} with <strong>${top}</strong> pts</span>`;
+    const chasers = scored.filter(p => p.points < top).sort((a, b) => b.points - a.points);
+    const margin = leaders.length === 1 && chasers.length
+      ? `<div class="margin"><b>${top - chasers[0].points}</b> point${top - chasers[0].points === 1 ? "" : "s"} ahead of ${chasers.filter(c => c.points === chasers[0].points).map(c => c.name).join(" & ")}</div>`
+      : "";
+    el.className = "spotlight";
+    el.innerHTML = `
+      <div class="title">${leaders.length > 1 ? "Tied for the lead" : "Current leader"}</div>
+      <div class="champs">
+        ${leaders.map(p => `<div class="champ">
+          <div class="crown-big">👑</div>
+          <img src="${p.avatar}" alt="${p.name}">
+          <div class="cname">${p.name}</div>
+          <div class="cpts">${top} pts</div>
+        </div>`).join("")}
+      </div>
+      ${margin}`;
     return leaders.map(p => p.name);
   }
 
