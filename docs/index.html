@@ -230,6 +230,8 @@
   button:hover:not(:disabled) { border-color: var(--torch); }
   button:disabled { opacity: .4; cursor: not-allowed; }
   .card button.elim { background: linear-gradient(180deg, #8a2a1c, #6b1f14); border-color: #a83a28; }
+  .card .ph.clickable { cursor: pointer; }
+  .card .ph.clickable:hover img.face { filter: brightness(1.15) saturate(1.2); }
   .card button.elim:hover { border-color: var(--torch-2); }
   .card .status { text-align: center; font-size: 12px; color: var(--muted); padding: 7px 0; }
   .toolbar { display: flex; gap: 8px; }
@@ -446,7 +448,7 @@
       const isWin = c === win;
       const owners = PLAYERS.filter(p => p.picks.includes(c));
       return `<div class="card ${isOut ? "out" : ""} ${isWin ? "winner" : ""}">
-        <div class="ph">
+        <div class="ph ${!isOut && !isWin && isKeeper() ? "clickable" : ""}" data-name="${c}">
           <img class="face" src="${img(c)}" alt="${c}">
           <div class="stamp">
             <div class="torch">${isWin ? "👑" : "🔥"}</div>
@@ -485,9 +487,10 @@
   }
 
   document.getElementById("grid").addEventListener("click", e => {
-    const btn = e.target.closest("button.elim");
+    const btn = e.target.closest("button.elim") || e.target.closest(".ph.clickable");
     if (!btn) return;
     const name = btn.dataset.name;
+    if (!btn.matches("button") && !confirm(`Eliminate ${name}?`)) return;
     act(() => eliminated.push(name), `Eliminate ${name} (${ordinal(eliminated.length + 1)} out)`);
   });
   document.getElementById("undo").addEventListener("click", () => {
